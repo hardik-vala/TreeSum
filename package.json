@@ -17,7 +17,15 @@
         "command": "treesum.helloWorld",
         "title": "Hello World"
       }
-    ]
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "workspaceTreeSummaries",
+          "name": "File and Folder Summaries"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
