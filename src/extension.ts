@@ -2,8 +2,6 @@ import * as vscode from "vscode";
 import { WorkspaceTreeSummariesProvider } from "./tree";
 
 export function activate(context: vscode.ExtensionContext) {
-  console.log('Congratulations, your extension "treesum" is now active!');
-
   vscode.window.createTreeView("workspaceTreeSummaries", {
     treeDataProvider: new WorkspaceTreeSummariesProvider(),
   });
