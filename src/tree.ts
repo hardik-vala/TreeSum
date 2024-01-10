@@ -3,6 +3,8 @@ import * as vscode from "vscode";
 export class WorkspaceTreeSummariesProvider
   implements vscode.TreeDataProvider<WorkspaceTreeSummariesItem>
 {
+  constructor(private workspaceRootPath: string | undefined) {}
+
   getTreeItem(element: WorkspaceTreeSummariesItem): vscode.TreeItem {
     return element;
   }
@@ -10,13 +12,8 @@ export class WorkspaceTreeSummariesProvider
   getChildren(
     element?: WorkspaceTreeSummariesItem
   ): Thenable<WorkspaceTreeSummariesItem[]> {
-    if (
-      !element &&
-      vscode.workspace.workspaceFolders &&
-      vscode.workspace.workspaceFolders.length > 0
-    ) {
-      const workspaceRootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
-      return this.getChildrenInDir(workspaceRootPath);
+    if (!element && this.workspaceRootPath) {
+      return this.getChildrenInDir(this.workspaceRootPath);
     }
 
     if (element && element.isDir) {

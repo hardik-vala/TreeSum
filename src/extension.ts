@@ -1,9 +1,12 @@
 import * as vscode from "vscode";
 import { WorkspaceTreeSummariesProvider } from "./tree";
+import { getWorkspaceRootPath } from "./workspace";
 
 export function activate(context: vscode.ExtensionContext) {
+  const workspaceRootPath = getWorkspaceRootPath();
+    
   vscode.window.createTreeView("workspaceTreeSummaries", {
-    treeDataProvider: new WorkspaceTreeSummariesProvider(),
+    treeDataProvider: new WorkspaceTreeSummariesProvider(workspaceRootPath),
   });
 
   // The command has been defined in the package.json file.
