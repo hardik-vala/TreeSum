@@ -1,4 +1,15 @@
+import * as path from "path";
 import * as vscode from "vscode";
+
+const ICONS_DIR_PATH: string = path.join(
+  __filename,
+  "..",
+  "..",
+  "resources",
+  "icons"
+);
+const DIR_ICON_PATH = path.join(ICONS_DIR_PATH, "default_folder.svg");
+const FILE_ICON_PATH = path.join(ICONS_DIR_PATH, "default_file.svg");
 
 export class WorkspaceTreeSummariesProvider
   implements vscode.TreeDataProvider<WorkspaceTreeSummariesItem>
@@ -58,5 +69,15 @@ export class WorkspaceTreeSummariesItem extends vscode.TreeItem {
     this.tooltip = tooltip;
     this.uri = uri;
     this.isDir = isDir;
+
+    this.iconPath = this.isDir
+      ? {
+          light: DIR_ICON_PATH,
+          dark: DIR_ICON_PATH,
+        }
+      : {
+          light: FILE_ICON_PATH,
+          dark: FILE_ICON_PATH,
+        };
   }
 }
