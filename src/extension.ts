@@ -4,10 +4,17 @@ import { getWorkspaceRootPath } from "./workspace";
 
 export function activate(context: vscode.ExtensionContext) {
   const workspaceRootPath = getWorkspaceRootPath();
-    
+
+  const workspaceTreeSummariesProvider = new WorkspaceTreeSummariesProvider(
+    workspaceRootPath
+  );
   vscode.window.createTreeView("workspaceTreeSummaries", {
-    treeDataProvider: new WorkspaceTreeSummariesProvider(workspaceRootPath),
+    treeDataProvider: workspaceTreeSummariesProvider,
   });
+  vscode.commands.registerCommand("treesum.refresh", () => {
+    workspaceTreeSummariesProvider.refresh();
+		vscode.window.showInformationMessage("Refreshed file and folder summaries.");
+	});
 
   // The command has been defined in the package.json file.
   // The commandId parameter must match the command field in package.json.
