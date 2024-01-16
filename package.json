@@ -1,5 +1,6 @@
 {
   "name": "treesum",
+  "publisher": "someone",
   "displayName": "TreeSum",
   "description": "Smart way to summarize files and folders in a vscode workspace.",
   "version": "0.0.1",
@@ -12,12 +13,33 @@
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
+    "configuration": [
+      {
+        "type": "object",
+        "title": "TreeSum",
+        "properties": {
+          "treesum.apiKey": {
+            "type": "string",
+            "default": "",
+            "description": "API key for accessing TreeSum services"
+          }
+        }
+      }
+    ],
     "commands": [
       {
         "command": "treesum.helloWorld",
         "title": "Hello World"
       }
-    ]
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "workspaceTreeSummaries",
+          "name": "File and Folder Summaries"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
