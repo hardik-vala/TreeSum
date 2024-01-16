@@ -12,6 +12,25 @@ class LLMService {
     });
   }
 
+  /**
+ * Generates a concise summary for a specified file or directory within a given parent directory.
+ * 
+ * This method leverages OpenAI's GPT model to create a one-sentence summary, which is intended
+ * for display in a navigation menu within a text editor like Visual Studio Code. The summary
+ * is generated based on the file or directory's name and the names of its sibling files and
+ * directories, providing contextual understanding of its contents or purpose.
+ * 
+ * The method first retrieves the names of all items in the specified parent directory. It then
+ * constructs a prompt for the GPT model, including the names of these items and the specific
+ * file or directory to be summarized. The resulting summary is concise, avoiding repetition of
+ * the file or directory's name, and aims to use sentence fragments where appropriate to conserve
+ * space in the UI.
+ * 
+ * @param parent - A `vscode.Uri` object representing the parent directory of the file or directory to summarize.
+ * @param fileOrDirName - The name of the file or directory for which the summary is to be generated.
+ * @returns A promise that resolves to the generated summary string. If the summary cannot be generated,
+ *          a default message indicating no summary is available will be returned.
+ */
   async summarizeFileOrDirectory(parent: Uri, fileOrDirName: string): Promise<string> {
     const dirName = path.basename(parent.fsPath);
     const topLevelFolderContents = vscode.workspace.fs.readDirectory(parent);

@@ -40,8 +40,6 @@ export class WorkspaceTreeSummariesProvider
     return vscode.workspace.fs.readDirectory(dirUri).then((items) => {
       return Promise.all(items.map(async (item) => {
         const name = item[0];
-        // summarizeFileOrDirectory takes a parent dir
-        // and the selected child file or directory name to summarize
         const summary = await this.llmService?.summarizeFileOrDirectory(dirUri, name);
         return new WorkspaceTreeSummariesItem(
           name,
