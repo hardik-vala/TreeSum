@@ -1,7 +1,6 @@
 import * as vscode from "vscode";
 import { WorkspaceTreeSummariesProvider } from "./tree";
 import { getWorkspaceRootPath } from "./workspace";
-import LLMService from './llmService';
 
 export function activate(context: vscode.ExtensionContext) {
   const workspaceRootPath = getWorkspaceRootPath();
@@ -11,8 +10,6 @@ export function activate(context: vscode.ExtensionContext) {
     return;
   }
 
-	const llmService = new LLMService(apiKey);
-    
   vscode.window.createTreeView("workspaceTreeSummaries", {
     treeDataProvider: new WorkspaceTreeSummariesProvider(workspaceRootPath),
   });
@@ -23,7 +20,6 @@ export function activate(context: vscode.ExtensionContext) {
     // Display a message box to the user.
     vscode.window.showInformationMessage("Hello World from TreeSum!");
 
-		llmService.summarizeSrcDir();
   });
 
   context.subscriptions.push(disposable);
