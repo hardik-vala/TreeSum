@@ -1,9 +1,19 @@
 import * as vscode from "vscode";
+import LLMService from "./llmService";
 
 export class WorkspaceTreeSummariesProvider
   implements vscode.TreeDataProvider<WorkspaceTreeSummariesItem>
 {
-  constructor(private workspaceRootPath: string | undefined) {}
+  private llmService?: LLMService;
+
+  constructor(private workspaceRootPath: string | undefined) {
+    const apiKey = vscode.workspace.getConfiguration('treesum').get<string>('apiKey');
+    if (!apiKey) {
+      vscode.window.showWarningMessage('Please set your LLMService API key in the settings.');
+      return;
+    }
+    this.llmService = new LLMService(apiKey);
+  }
 
   getTreeItem(element: WorkspaceTreeSummariesItem): vscode.TreeItem {
     return element;
@@ -28,18 +38,22 @@ export class WorkspaceTreeSummariesProvider
   ): Promise<WorkspaceTreeSummariesItem[]> {
     const dirUri = vscode.Uri.file(dirPath);
     return vscode.workspace.fs.readDirectory(dirUri).then((items) => {
-      return items.map((item) => {
+      return Promise.all(items.map(async (item) => {
+        const name = item[0];
+        // summarizeFileOrDirectory takes a parent dir
+        // and the selected child file or directory name to summarize
+        const summary = await this.llmService?.summarizeFileOrDirectory(dirUri, name);
         return new WorkspaceTreeSummariesItem(
-          item[0],
+          name,
           item[1] === vscode.FileType.Directory
             ? vscode.TreeItemCollapsibleState.Collapsed
             : vscode.TreeItemCollapsibleState.None,
-          "DESCRIPTION GOES HERE",
+          summary === undefined ? "AWAITING SUMMARY" : summary,
           "TOOLTIP GOES HERE",
           vscode.Uri.joinPath(dirUri, item[0]).fsPath,
           item[1] === vscode.FileType.Directory
         );
-      });
+      }));
     });
   }
 }
