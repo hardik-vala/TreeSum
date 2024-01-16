@@ -4,6 +4,8 @@ import { getWorkspaceRootPath } from "./workspace";
 
 export function activate(context: vscode.ExtensionContext) {
   const workspaceRootPath = getWorkspaceRootPath();
+
+  // Notify the user that they need to set their API key.
 	const apiKey = vscode.workspace.getConfiguration('treesum').get<string>('apiKey');
 	if (!apiKey) {
     vscode.window.showWarningMessage('Please set your LLMService API key in the settings.');
