@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { WorkspaceTreeSummariesProvider } from "./tree";
 import { getWorkspaceRootPath } from "./workspace";
-import LLMService from './llmService'; // Adjust the path as necessary
+import LLMService from './llmService';
 
 export function activate(context: vscode.ExtensionContext) {
   const workspaceRootPath = getWorkspaceRootPath();
@@ -11,7 +11,6 @@ export function activate(context: vscode.ExtensionContext) {
     return;
   }
 
-	// TODO: write VSCode config/interface for user to provide their own API key.
 	const llmService = new LLMService(apiKey);
     
   vscode.window.createTreeView("workspaceTreeSummaries", {
@@ -29,6 +28,5 @@ export function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(disposable);
 }
-
 
 export function deactivate() {}

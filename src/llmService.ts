@@ -33,10 +33,8 @@ class LLMService {
 
         try {
           for (const name of topLevelContentsNames) {
-            // Call LLMService to generate a summary for the file
             const summary = await this.summarizeContent(joinedContentsNames, wfname, name);
 
-            // Display the summary
             vscode.window.showInformationMessage(`Summary for ${name}: ${summary}`);
           }
         } catch (error) {
@@ -84,10 +82,9 @@ class LLMService {
           {role: "system", content: systemMessage},
           {role: "user", content: prompt}
         ],
-        model: "gpt-4", // Replace with the model of your choice
+        model: "gpt-4",
       });
 
-      // return response.choices[0].text.trim();
       if (response.choices[0].message.content !== null) {
         console.log(response.choices[0].message.content?.trim());
         return response.choices[0].message.content?.trim();
