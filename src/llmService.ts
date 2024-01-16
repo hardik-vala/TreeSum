@@ -74,7 +74,6 @@ class LLMService {
       });
 
       if (response.choices[0].message.content !== null) {
-        console.log(response.choices[0].message.content?.trim());
         return response.choices[0].message.content?.trim();
       } else {
         return 'No summary available';

@@ -5,10 +5,13 @@ import { getWorkspaceRootPath } from "./workspace";
 export function activate(context: vscode.ExtensionContext) {
   const workspaceRootPath = getWorkspaceRootPath();
 
-  // Notify the user that they need to set their API key.
-	const apiKey = vscode.workspace.getConfiguration('treesum').get<string>('apiKey');
-	if (!apiKey) {
-    vscode.window.showWarningMessage('Please set your LLMService API key in the settings.');
+  const apiKey = vscode.workspace
+    .getConfiguration("treesum")
+    .get<string>("apiKey");
+  if (!apiKey) {
+    vscode.window.showErrorMessage(
+      "Error: Please set your LLMService API key in the settings."
+    );
     return;
   }
 
@@ -21,7 +24,6 @@ export function activate(context: vscode.ExtensionContext) {
   let disposable = vscode.commands.registerCommand("treesum.helloWorld", () => {
     // Display a message box to the user.
     vscode.window.showInformationMessage("Hello World from TreeSum!");
-
   });
 
   context.subscriptions.push(disposable);
