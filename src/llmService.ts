@@ -5,11 +5,11 @@ import * as path from "path";
 
 class LLMService {
   private openai: OpenAI;
+  private throttler: Throttler;
 
   constructor(apiKey: string) {
-    this.openai = new OpenAI({
-      apiKey: apiKey
-    });
+    this.openai = new OpenAI({ apiKey: apiKey });
+    this.throttler = new Throttler(1000);
   }
 
   /**
