@@ -40,10 +40,6 @@ export class WorkspaceTreeSummariesProvider
     return vscode.workspace.fs.readDirectory(dirUri).then((items) => {
       return Promise.all(items.map(async (item) => {
         const name = item[0];
-        // TODO: Instead of throttling,
-        // implement retries when rate limit is reached.
-        const delay = Math.random() * (100000 - 1000) + 1000;
-        await new Promise( resolve => setTimeout(resolve, delay));
         const summary = await this.llmService?.summarizeFileOrDirectory(dirUri, name);
         return new WorkspaceTreeSummariesItem(
           name,
