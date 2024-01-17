@@ -12,6 +12,19 @@
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
+    "configuration": [
+      {
+        "type": "object",
+        "title": "TreeSum",
+        "properties": {
+          "treesum.apiKey": {
+            "type": "string",
+            "default": "",
+            "description": "API key for accessing TreeSum services"
+          }
+        }
+      }
+    ],
     "commands": [
       {
         "command": "treesum.refresh",
@@ -45,5 +58,8 @@
     "@vscode/test-electron": "^2.3.8",
     "eslint": "^8.56.0",
     "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "openai": "^4.24.3"
   }
 }
