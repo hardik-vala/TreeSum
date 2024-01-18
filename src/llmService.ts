@@ -3,6 +3,9 @@ import * as vscode from "vscode";
 import { Uri } from "vscode";
 import * as path from "path";
 
+// Constant for the default number of retries
+const DEFAULT_RETRY_COUNT = 3;
+
 class LLMService {
   private openai: OpenAI;
 
@@ -32,7 +35,7 @@ class LLMService {
   async summarizeFileOrDirectory(
     parent: Uri,
     fileOrDirName: string,
-    retries: number = 3
+    retries: number = DEFAULT_RETRY_COUNT
   ): Promise<string> {
     const dirName = path.basename(parent.fsPath);
     const topLevelFolderContents = vscode.workspace.fs.readDirectory(parent);
