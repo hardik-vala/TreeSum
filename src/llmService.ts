@@ -64,8 +64,8 @@ class LLMService {
     for the purposes of displaying the summary next to the file name
     inside of a nav menu within a text editor like Visual Studio Code.\n
     Don't waste any space re-stating the filename in your summary; you can assume
-    I already know it. Be as cocise as possible, and use sentence fragments to
-    conservce space.
+    I already know it. Be as concise as possible, and use sentence fragments to
+    conserve space.
 
     Please provide a one-sentence summary for the following file or directory:
     ${fileOrDirName}
