@@ -58,7 +58,7 @@ export class WorkspaceTreeSummariesProvider
               ? vscode.TreeItemCollapsibleState.Collapsed
               : vscode.TreeItemCollapsibleState.None,
             summary === undefined ? "AWAITING SUMMARY" : summary,
-            "TOOLTIP GOES HERE",
+            summary === undefined ? "AWAITING SUMMARY" : summary,
             vscode.Uri.joinPath(dirUri, item[0]).fsPath,
             item[1] === vscode.FileType.Directory
           );
