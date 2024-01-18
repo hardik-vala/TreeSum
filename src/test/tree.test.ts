@@ -1,5 +1,7 @@
 import * as assert from "assert";
+import * as sinon from "sinon";
 import * as vscode from "vscode";
+import LLMService from "../llmService";
 import {
   WorkspaceTreeSummariesItem,
   WorkspaceTreeSummariesProvider,
@@ -8,8 +10,20 @@ import { getWorkspaceRootPath } from "../workspace";
 
 suite("WorkspaceTreeSummariesProvider Test Suite", () => {
   const workspaceRootUri = getWorkspaceRootUri();
-  const provider: WorkspaceTreeSummariesProvider =
-    new WorkspaceTreeSummariesProvider(workspaceRootUri.fsPath);
+  let llmServiceStub: sinon.SinonStubbedInstance<LLMService>;
+  let provider: WorkspaceTreeSummariesProvider;
+
+  setup(() => {
+    llmServiceStub = sinon.createStubInstance(LLMService);
+    provider = new WorkspaceTreeSummariesProvider(
+      workspaceRootUri.fsPath,
+      llmServiceStub
+    );
+  });
+
+  teardown(() => {
+    sinon.restore();
+  });
 
   test("getTreeItem", () => {
     const item = new WorkspaceTreeSummariesItem(
@@ -25,6 +39,8 @@ suite("WorkspaceTreeSummariesProvider Test Suite", () => {
   });
 
   test("getChildren(root)", async () => {
+    llmServiceStub.summarizeFileOrDirectory.resolves("DESCRIPTION GOES HERE");
+
     const children = await provider.getChildren();
 
     assert.deepStrictEqual(children, [
@@ -48,6 +64,8 @@ suite("WorkspaceTreeSummariesProvider Test Suite", () => {
   });
 
   test("getChildren(subdir)", async () => {
+    llmServiceStub.summarizeFileOrDirectory.resolves("DESCRIPTION GOES HERE");
+
     const item = new WorkspaceTreeSummariesItem(
       "test_subdir",
       vscode.TreeItemCollapsibleState.Collapsed,

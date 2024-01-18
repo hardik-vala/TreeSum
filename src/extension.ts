@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import LLMService from "./llmService";
 import { WorkspaceTreeSummariesProvider } from "./tree";
 import { getWorkspaceRootPath } from "./workspace";
 
@@ -16,7 +17,10 @@ export function activate(context: vscode.ExtensionContext) {
   }
 
   vscode.window.createTreeView("workspaceTreeSummaries", {
-    treeDataProvider: new WorkspaceTreeSummariesProvider(workspaceRootPath),
+    treeDataProvider: new WorkspaceTreeSummariesProvider(
+      workspaceRootPath,
+      new LLMService(apiKey)
+    ),
   });
 
   // The command has been defined in the package.json file.
