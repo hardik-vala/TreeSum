@@ -1,7 +1,7 @@
 import OpenAI from "openai";
+import * as path from "path";
 import * as vscode from "vscode";
 import { Uri } from "vscode";
-import * as path from "path";
 
 // Constant for the default number of retries
 const DEFAULT_RETRY_COUNT = 3;
@@ -37,6 +37,7 @@ class LLMService {
     fileOrDirName: string,
     retries: number = DEFAULT_RETRY_COUNT
   ): Promise<string> {
+    const uri = vscode.Uri.joinPath(parent, fileOrDirName);
     const dirName = path.basename(parent.fsPath);
     const topLevelFolderContents = vscode.workspace.fs.readDirectory(parent);
     const topLevelContentsNames = (await topLevelFolderContents).map(
@@ -52,24 +53,60 @@ class LLMService {
     its file name and the other file names of its siblings inside of a directory.
     `;
 
-    const prompt = `
+    let prompt = `
     I'm providing you with the file names contained inside of
     a directory named ${dirName}.
-    The contents in this directory are as follows: \n
+    The contents in this directory are as follows:
 
-    ${content}\n
-
+    ${content}`;
+    if (await this.isFile(uri)) {
+      const text = await this.readTextFile(uri);
+      if (text) {
+        prompt += `
     I will select one of the files from this directory and provide you with
-    its name. Please provide a short, concise, one-sentence summary of this file
+    its name and content. Please provide a short, concise, one-sentence summary of this file
     for the purposes of displaying the summary next to the file name
     inside of a nav menu within a text editor like Visual Studio Code.\n
     Don't waste any space re-stating the filename in your summary; you can assume
     I already know it. Be as concise as possible, and use sentence fragments to
     conserve space.
 
-    Please provide a one-sentence summary for the following file or directory:
+    File name:
+    ${fileOrDirName}
+
+    File content:
+    ${text}
+
+    Please provide a one-sentence summary for the file.:
+    `;
+      } else {
+        prompt += `
+        I will select one of the files from this directory and provide you with
+        its name. Please provide a short, concise, one-sentence summary of this file
+        for the purposes of displaying the summary next to the file name
+        inside of a nav menu within a text editor like Visual Studio Code.\n
+        Don't waste any space re-stating the name of the file in your summary; you can assume
+        I already know it. Be as concise as possible, and use sentence fragments to
+        conserve space.
+    
+        Please provide a one-sentence summary for the following file:
+        ${fileOrDirName}
+        `;
+      }
+    } else {
+      prompt += `
+    I will select one of the subdirectories from this directory and provide you with
+    its name. Please provide a short, concise, one-sentence summary of this subdirectory
+    for the purposes of displaying the summary next to the subdirectory name
+    inside of a nav menu within a text editor like Visual Studio Code.\n
+    Don't waste any space re-stating the name of the subdirectory in your summary; you can assume
+    I already know it. Be as concise as possible, and use sentence fragments to
+    conserve space.
+
+    Please provide a one-sentence summary for the following subdirectory:
     ${fileOrDirName}
     `;
+    }
 
     try {
       const response = await this.openai.chat.completions.create({
@@ -111,6 +148,29 @@ class LLMService {
       const delay = Math.random() * (max - min) + min;
       return new Promise((resolve) => setTimeout(resolve, delay));
     }
+  }
+
+  private async isFile(uri: vscode.Uri): Promise<boolean> {
+    return vscode.workspace.fs.stat(uri).then((stats) => {
+      if (stats.type === vscode.FileType.File) {
+        return true;
+      }
+      if (stats.type === vscode.FileType.Directory) {
+        return false;
+      }
+
+      throw new Error("Unknown file type.");
+    });
+  }
+
+  private async readTextFile(uri: vscode.Uri): Promise<string | null> {
+    return vscode.workspace.fs.readFile(uri).then(content => {
+      if (content.toString().trim().length > 0) {
+        return content.toString();
+      }
+      
+      return null;
+    });
   }
 }
 
