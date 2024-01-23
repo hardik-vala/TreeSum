@@ -5,6 +5,7 @@ import { Uri } from "vscode";
 
 // Constant for the default number of retries
 const DEFAULT_RETRY_COUNT = 3;
+const MAX_FILE_TOKENS = 1000;
 
 class LLMService {
   private openai: OpenAI;
@@ -61,7 +62,8 @@ class LLMService {
     ${content}`;
     if (await this.isFile(uri)) {
       const text = await this.readTextFile(uri);
-      if (text) {
+      const tokenCount = this.countTokens(text);
+      if (text && tokenCount < MAX_FILE_TOKENS) {
         prompt += `
     I will select one of the files from this directory and provide you with
     its name and content. Please provide a short, concise, one-sentence summary of this file
@@ -77,21 +79,21 @@ class LLMService {
     File content:
     ${text}
 
-    Please provide a one-sentence summary for the file.:
+    Please provide a one-sentence summary for the file.
     `;
       } else {
         prompt += `
-        I will select one of the files from this directory and provide you with
-        its name. Please provide a short, concise, one-sentence summary of this file
-        for the purposes of displaying the summary next to the file name
-        inside of a nav menu within a text editor like Visual Studio Code.\n
-        Don't waste any space re-stating the name of the file in your summary; you can assume
-        I already know it. Be as concise as possible, and use sentence fragments to
-        conserve space.
-    
-        Please provide a one-sentence summary for the following file:
-        ${fileOrDirName}
-        `;
+      I will select one of the files from this directory and provide you with
+      its name. Please provide a short, concise, one-sentence summary of this file
+      for the purposes of displaying the summary next to the file name
+      inside of a nav menu within a text editor like Visual Studio Code.\n
+      Don't waste any space re-stating the name of the file in your summary; you can assume
+      I already know it. Be as concise as possible, and use sentence fragments to
+      conserve space.
+  
+      Please provide a one-sentence summary for the following file:
+      ${fileOrDirName}
+      `;
       }
     } else {
       prompt += `
@@ -171,6 +173,15 @@ class LLMService {
       
       return null;
     });
+  }
+
+  private countTokens(text: string | null): number {
+    if (!text) {
+      return 0;
+    }
+    let tokens = text.split(/\s+|\\n+/gm); 
+    tokens = tokens.filter(t => t.length > 0);
+    return tokens.length;
   }
 }
 
