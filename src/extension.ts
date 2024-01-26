@@ -1,3 +1,4 @@
+import OpenAI from "openai";
 import * as vscode from "vscode";
 import LLMService from "./llmService";
 import { WorkspaceTreeSummariesProvider } from "./tree";
@@ -16,10 +17,12 @@ export function activate(context: vscode.ExtensionContext) {
     return;
   }
 
+  const openai = new OpenAI({ apiKey: apiKey });
+
   vscode.window.createTreeView("workspaceTreeSummaries", {
     treeDataProvider: new WorkspaceTreeSummariesProvider(
       workspaceRootPath,
-      new LLMService(apiKey)
+      new LLMService(openai)
     ),
   });
 

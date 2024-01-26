@@ -1,3 +1,4 @@
+import OpenAI from "openai";
 import * as path from "path";
 import * as vscode from "vscode";
 import LLMService from "./llmService";
