@@ -85,7 +85,7 @@ class LLMService {
     } catch (error) {
       if (isRateLimitError(error) && retries > 0) {
         console.error("Rate limit reached, retrying...", error);
-        await randomizedWait();
+        await this.randomizedWait();
         return this.summarizeFileOrDirectory(
           parent,
           fileOrDirName,
@@ -100,14 +100,14 @@ class LLMService {
     function isRateLimitError(error: any): boolean {
       return error.status === 429;
     }
+  }
 
-    function randomizedWait() {
-      const min = 1000;
-      const max = 4000;
+  protected randomizedWait() {
+    const min = 1000;
+    const max = 4000;
 
-      const delay = Math.random() * (max - min) + min;
-      return new Promise((resolve) => setTimeout(resolve, delay));
-    }
+    const delay = Math.random() * (max - min) + min;
+    return new Promise((resolve) => setTimeout(resolve, delay));
   }
 }
 
