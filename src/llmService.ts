@@ -1,16 +1,16 @@
-import OpenAI from "openai";
 import * as path from "path";
 import * as vscode from "vscode";
 import { Uri } from "vscode";
+import OpenAIClient from "./openaiClient";
 
 // Constant for the default number of retries
 const DEFAULT_RETRY_COUNT = 3;
 
 class LLMService {
-  private openai: OpenAI;
+  private openaiClient: OpenAIClient;
 
-  constructor(openai: OpenAI) {
-    this.openai = openai;
+  constructor(openaiClient: OpenAIClient) {
+    this.openaiClient = openaiClient;
   }
 
   /**
@@ -72,16 +72,13 @@ class LLMService {
     `;
 
     try {
-      const response = await this.openai.chat.completions.create({
-        messages: [
-          { role: "system", content: systemMessage },
-          { role: "user", content: prompt },
-        ],
-        model: "gpt-4",
-      });
+      const response = await this.openaiClient.createChatCompletion(
+        systemMessage,
+        prompt
+      );
 
-      if (response.choices[0].message.content !== null) {
-        return response.choices[0].message.content?.trim();
+      if (response) {
+        return response;
       } else {
         return "No summary available";
       }
