@@ -1,4 +1,6 @@
 import * as vscode from "vscode";
+import LLMService from "./llmService";
+import OpenAIClient from "./openaiClient";
 import { WorkspaceTreeSummariesProvider } from "./tree";
 import { getWorkspaceRootPath } from "./workspace";
 
@@ -15,16 +17,16 @@ export function activate(context: vscode.ExtensionContext) {
     return;
   }
 
-  vscode.window.createTreeView("workspaceTreeSummaries", {
-    treeDataProvider: new WorkspaceTreeSummariesProvider(workspaceRootPath),
-  });
+  const openaiClient = new OpenAIClient(apiKey);
 
   const workspaceTreeSummariesProvider = new WorkspaceTreeSummariesProvider(
-    workspaceRootPath
+    workspaceRootPath,
+    new LLMService(openaiClient)
   );
   vscode.window.createTreeView("workspaceTreeSummaries", {
     treeDataProvider: workspaceTreeSummariesProvider,
   });
+
   let disposable = vscode.commands.registerCommand("treesum.refresh", () => {
     workspaceTreeSummariesProvider.refresh();
 		vscode.window.showInformationMessage("Refreshed file and folder summaries.");

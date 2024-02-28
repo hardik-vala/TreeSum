@@ -1,5 +1,7 @@
 import * as assert from "assert";
+import * as sinon from "sinon";
 import * as vscode from "vscode";
+import LLMService from "../llmService";
 import {
   WorkspaceTreeSummariesItem,
   WorkspaceTreeSummariesProvider,
@@ -8,15 +10,27 @@ import { getWorkspaceRootPath } from "../workspace";
 
 suite("WorkspaceTreeSummariesProvider Test Suite", () => {
   const workspaceRootUri = getWorkspaceRootUri();
-  const provider: WorkspaceTreeSummariesProvider =
-    new WorkspaceTreeSummariesProvider(workspaceRootUri.fsPath);
+  let llmServiceStub: sinon.SinonStubbedInstance<LLMService>;
+  let provider: WorkspaceTreeSummariesProvider;
+
+  setup(() => {
+    llmServiceStub = sinon.createStubInstance(LLMService);
+    provider = new WorkspaceTreeSummariesProvider(
+      workspaceRootUri.fsPath,
+      llmServiceStub
+    );
+  });
+
+  teardown(() => {
+    sinon.restore();
+  });
 
   test("getTreeItem", () => {
     const item = new WorkspaceTreeSummariesItem(
       "test_file_1.txt",
       vscode.TreeItemCollapsibleState.None,
-      "DESCRIPTION GOES HERE",
-      "TOOLTIP GOES HERE",
+      "SUMMARY GOES HERE",
+      "SUMMARY GOES HERE",
       vscode.Uri.joinPath(workspaceRootUri, "test_file_1.txt").fsPath,
       false
     );
@@ -25,22 +39,24 @@ suite("WorkspaceTreeSummariesProvider Test Suite", () => {
   });
 
   test("getChildren(root)", async () => {
+    llmServiceStub.summarizeFileOrDirectory.resolves("SUMMARY GOES HERE");
+
     const children = await provider.getChildren();
 
     assert.deepStrictEqual(children, [
       new WorkspaceTreeSummariesItem(
         "test_file_1.txt",
         vscode.TreeItemCollapsibleState.None,
-        "DESCRIPTION GOES HERE",
-        "TOOLTIP GOES HERE",
+        "SUMMARY GOES HERE",
+        "SUMMARY GOES HERE",
         vscode.Uri.joinPath(workspaceRootUri, "test_file_1.txt").fsPath,
         false
       ),
       new WorkspaceTreeSummariesItem(
         "test_subdir",
         vscode.TreeItemCollapsibleState.Collapsed,
-        "DESCRIPTION GOES HERE",
-        "TOOLTIP GOES HERE",
+        "SUMMARY GOES HERE",
+        "SUMMARY GOES HERE",
         vscode.Uri.joinPath(workspaceRootUri, "test_subdir").fsPath,
         true
       ),
@@ -48,11 +64,13 @@ suite("WorkspaceTreeSummariesProvider Test Suite", () => {
   });
 
   test("getChildren(subdir)", async () => {
+    llmServiceStub.summarizeFileOrDirectory.resolves("SUMMARY GOES HERE");
+
     const item = new WorkspaceTreeSummariesItem(
       "test_subdir",
       vscode.TreeItemCollapsibleState.Collapsed,
-      "DESCRIPTION GOES HERE",
-      "TOOLTIP GOES HERE",
+      "SUMMARY GOES HERE",
+      "SUMMARY GOES HERE",
       vscode.Uri.joinPath(workspaceRootUri, "test_subdir").fsPath,
       true
     );
@@ -62,8 +80,8 @@ suite("WorkspaceTreeSummariesProvider Test Suite", () => {
       new WorkspaceTreeSummariesItem(
         "test_file_2.txt",
         vscode.TreeItemCollapsibleState.None,
-        "DESCRIPTION GOES HERE",
-        "TOOLTIP GOES HERE",
+        "SUMMARY GOES HERE",
+        "SUMMARY GOES HERE",
         vscode.Uri.joinPath(
           vscode.Uri.joinPath(workspaceRootUri, "test_subdir"),
           "test_file_2.txt"
@@ -73,8 +91,8 @@ suite("WorkspaceTreeSummariesProvider Test Suite", () => {
       new WorkspaceTreeSummariesItem(
         "test_file_3.txt",
         vscode.TreeItemCollapsibleState.None,
-        "DESCRIPTION GOES HERE",
-        "TOOLTIP GOES HERE",
+        "SUMMARY GOES HERE",
+        "SUMMARY GOES HERE",
         vscode.Uri.joinPath(
           vscode.Uri.joinPath(workspaceRootUri, "test_subdir"),
           "test_file_3.txt"

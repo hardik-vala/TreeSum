@@ -1,16 +1,16 @@
-import OpenAI from "openai";
 import * as path from "path";
 import * as vscode from "vscode";
 import { Uri } from "vscode";
+import OpenAIClient from "./openaiClient";
 
 // Constant for the default number of retries
 const DEFAULT_RETRY_COUNT = 3;
 
 class LLMService {
-  private openai: OpenAI;
+  private openaiClient: OpenAIClient;
 
-  constructor(apiKey: string) {
-    this.openai = new OpenAI({ apiKey: apiKey });
+  constructor(openaiClient: OpenAIClient) {
+    this.openaiClient = openaiClient;
   }
 
   /**
@@ -72,23 +72,20 @@ class LLMService {
     `;
 
     try {
-      const response = await this.openai.chat.completions.create({
-        messages: [
-          { role: "system", content: systemMessage },
-          { role: "user", content: prompt },
-        ],
-        model: "gpt-4",
-      });
+      const response = await this.openaiClient.createChatCompletion(
+        systemMessage,
+        prompt
+      );
 
-      if (response.choices[0].message.content !== null) {
-        return response.choices[0].message.content?.trim();
+      if (response) {
+        return response;
       } else {
         return "No summary available";
       }
     } catch (error) {
       if (isRateLimitError(error) && retries > 0) {
         console.error("Rate limit reached, retrying...", error);
-        await randomizedWait();
+        await this.randomizedWait();
         return this.summarizeFileOrDirectory(
           parent,
           fileOrDirName,
@@ -103,14 +100,14 @@ class LLMService {
     function isRateLimitError(error: any): boolean {
       return error.status === 429;
     }
+  }
 
-    function randomizedWait() {
-      const min = 1000;
-      const max = 4000;
+  protected randomizedWait() {
+    const min = 1000;
+    const max = 4000;
 
-      const delay = Math.random() * (max - min) + min;
-      return new Promise((resolve) => setTimeout(resolve, delay));
-    }
+    const delay = Math.random() * (max - min) + min;
+    return new Promise((resolve) => setTimeout(resolve, delay));
   }
 }
 
