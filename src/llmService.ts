@@ -1,7 +1,7 @@
 import OpenAI from "openai";
+import * as path from "path";
 import * as vscode from "vscode";
 import { Uri } from "vscode";
-import * as path from "path";
 
 // Constant for the default number of retries
 const DEFAULT_RETRY_COUNT = 3;
