@@ -26,6 +26,19 @@ export class WorkspaceTreeSummariesProvider
     this.llmService = new LLMService(apiKey);
   }
 
+  private _onDidChangeTreeData: vscode.EventEmitter<
+    WorkspaceTreeSummariesItem | undefined | null | void
+  > = new vscode.EventEmitter<
+    WorkspaceTreeSummariesItem | undefined | null | void
+  >();
+  readonly onDidChangeTreeData: vscode.Event<
+    WorkspaceTreeSummariesItem | undefined | null | void
+  > = this._onDidChangeTreeData.event;
+
+  refresh(): void {
+    this._onDidChangeTreeData.fire();
+  }
+
   getTreeItem(element: WorkspaceTreeSummariesItem): vscode.TreeItem {
     return element;
   }

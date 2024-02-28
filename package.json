@@ -27,8 +27,8 @@
     ],
     "commands": [
       {
-        "command": "treesum.helloWorld",
-        "title": "Hello World"
+        "command": "treesum.refresh",
+        "title": "TreeSum: Refresh"
       }
     ],
     "views": {
