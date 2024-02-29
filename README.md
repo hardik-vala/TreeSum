@@ -1,6 +1,6 @@
-# treesum README
+# treesum
 
-This is the README for your extension "treesum". After writing up a brief description, we recommend including the following sections.
+Smart way to summarize files and folders in a VSCode workspace.
 
 ## Features
 
