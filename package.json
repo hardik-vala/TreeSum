@@ -27,8 +27,8 @@
     ],
     "commands": [
       {
-        "command": "treesum.helloWorld",
-        "title": "Hello World"
+        "command": "treesum.refresh",
+        "title": "TreeSum: Refresh"
       }
     ],
     "views": {
@@ -51,15 +51,18 @@
   "devDependencies": {
     "@types/mocha": "^10.0.6",
     "@types/node": "18.x",
+    "@types/sinon": "^17.0.3",
     "@types/vscode": "^1.85.0",
     "@typescript-eslint/eslint-plugin": "^6.15.0",
     "@typescript-eslint/parser": "^6.15.0",
     "@vscode/test-cli": "^0.0.4",
     "@vscode/test-electron": "^2.3.8",
     "eslint": "^8.56.0",
+    "sinon": "^17.0.1",
     "typescript": "^5.3.3"
   },
   "dependencies": {
+    "@wandb/sdk": "^0.5.1",
     "openai": "^4.24.3"
   }
 }
