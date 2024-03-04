@@ -24,7 +24,7 @@ suite("LLMService Test Suite", () => {
     sinon.restore();
   });
 
-  test("summarizeFileOrDirectory", async () => {
+  test("summarizeFileOrDirectory with file", async () => {
     openaiClientStub.createChatCompletion.resolves("FAKE SUMMARY");
 
     const summary = await llmService.summarizeFileOrDirectory(
@@ -57,6 +57,43 @@ its file name and the other file names of its siblings inside of a directory.
     Be as concise as possible, and use sentence fragments to conserve space.
 
     Please provide a one-sentence summary for the file: test_file_1.txt
+    `;
+    assert.strictEqual(
+      openaiClientStub.createChatCompletion.calledOnceWith(
+        expectedSystemMessage,
+        expectedPrompt
+      ),
+      true
+    );
+  });
+
+  test("summarizeFileOrDirectory with subdirectory", async () => {
+    openaiClientStub.createChatCompletion.resolves("FAKE SUMMARY");
+
+    const summary = await llmService.summarizeFileOrDirectory(
+      getWorkspaceRootUri(),
+      "test_subdir"
+    );
+
+    assert.strictEqual(summary, "FAKE SUMMARY");
+
+    const expectedSystemMessage = `
+You are a helpful assistant designed to summarize files.
+You are skilled at creating 1-sentence summaries of a file based on
+its file name and the other file names of its siblings inside of a directory.
+`;
+
+    const expectedPrompt = `
+    I'm providing you with the file names contained inside of a directory named test_workspace:
+
+    test_file_1.txt, test_subdir
+
+    For the purposes of displaying a summary next to the subdirectory in a file explorer inside Visual Studio Code, please provide a short, concise, one-sentence summary of this subdirectory:
+
+    test_subdir
+
+    Don't waste any space re-stating the name of the subdirectory in your summary.
+    Be as concise as possible, and use sentence fragments to conserve space.
     `;
     assert.strictEqual(
       openaiClientStub.createChatCompletion.calledOnceWith(
