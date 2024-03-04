@@ -190,7 +190,7 @@ class LLMService {
     ${content}
 
     For the purposes of displaying a summary next to the file in a file explorer inside Visual Studio Code, please provide a short, concise, one-sentence summary of this file:
-    
+
     ${fileName}
 
     This is the contents of the file:
@@ -200,7 +200,7 @@ class LLMService {
     Don't waste any space re-stating the name of the file in your summary.
     Be as concise as possible, and use sentence fragments to conserve space.
 
-    Please provide a one-sentence summary for the file: ${fileName}.
+    Please provide a one-sentence summary for the file: ${fileName}
     `;
 
     return prompt;

@@ -35,30 +35,28 @@ suite("LLMService Test Suite", () => {
     assert.strictEqual(summary, "FAKE SUMMARY");
 
     const expectedSystemMessage = `
-    You are a helpful assistant designed to summarize files.
-    You are skilled at creating 1-sentence summaries of a file based on
-    its file name and the other file names of its siblings inside of a directory.
-    `;
-    const expectedPrompt = `
-    I'm providing you with the file names contained inside of
-    a directory named test_workspace.
-    The contents in this directory are as follows: 
+You are a helpful assistant designed to summarize files.
+You are skilled at creating 1-sentence summaries of a file based on
+its file name and the other file names of its siblings inside of a directory.
+`;
 
+    const expectedPrompt = `
+    I'm providing you with the file names contained inside of a directory named test_workspace:
 
     test_file_1.txt, test_subdir
 
+    For the purposes of displaying a summary next to the file in a file explorer inside Visual Studio Code, please provide a short, concise, one-sentence summary of this file:
 
-    I will select one of the files from this directory and provide you with
-    its name. Please provide a short, concise, one-sentence summary of this file
-    for the purposes of displaying the summary next to the file name
-    inside of a nav menu within a text editor like Visual Studio Code.
-
-    Don't waste any space re-stating the filename in your summary; you can assume
-    I already know it. Be as concise as possible, and use sentence fragments to
-    conserve space.
-
-    Please provide a one-sentence summary for the following file or directory:
     test_file_1.txt
+
+    This is the contents of the file:
+
+    This is a test.
+
+    Don't waste any space re-stating the name of the file in your summary.
+    Be as concise as possible, and use sentence fragments to conserve space.
+
+    Please provide a one-sentence summary for the file: test_file_1.txt
     `;
     assert.strictEqual(
       openaiClientStub.createChatCompletion.calledOnceWith(
