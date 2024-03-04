@@ -11,6 +11,7 @@ const MAX_FILE_TOKEN_COUNT_DICT: { [key: string]: number } = {
   "gpt-3.5-turbo-0125": 16000,
   "gpt-4-32k-0613": 32000,
 };
+const DEFAULT_WAIT_MILLIS = 1000;
 const SYSTEM_MESSAGE = `You are a helpful assistant designed to summarize files and subdirectories. You are skilled at creating 1-sentence summaries of a file or subdirectory based on its name and its siblings inside of the parent directory.`;
 
 class LLMService {
@@ -93,7 +94,7 @@ class LLMService {
         prompt
       );
 
-      await this.randomizedWait();
+      await this.wait();
 
       if (response) {
         return response;
@@ -116,8 +117,12 @@ class LLMService {
     }
   }
 
+  protected wait() {
+    return new Promise((resolve) => setTimeout(resolve, DEFAULT_WAIT_MILLIS));
+  }
+
   protected randomizedWait() {
-    const min = 1000;
+    const min = DEFAULT_WAIT_MILLIS;
     const max = 4000;
 
     const delay = Math.random() * (max - min) + min;

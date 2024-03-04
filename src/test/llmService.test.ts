@@ -10,6 +10,10 @@ suite("LLMService Test Suite", () => {
   let llmService: LLMService;
 
   class TestLLMService extends LLMService {
+    protected wait() {
+      return Promise.resolve();
+    }
+
     protected randomizedWait() {
       return Promise.resolve();
     }
