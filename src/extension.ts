@@ -12,12 +12,22 @@ export function activate(context: vscode.ExtensionContext) {
     .get<string>("apiKey");
   if (!apiKey) {
     vscode.window.showErrorMessage(
-      "Error: Please set your LLMService API key in the settings."
+      "Error: Please set treesum.apiKey in the settings."
     );
     return;
   }
 
-  const openaiClient = new OpenAIClient(apiKey);
+  const modelKey = vscode.workspace
+    .getConfiguration("treesum")
+    .get<string>("model");
+  if (!modelKey) {
+    vscode.window.showErrorMessage(
+      "Error: Please set treesum.model in the settings."
+    );
+    return;
+  }
+
+  const openaiClient = new OpenAIClient(apiKey, modelKey);
 
   const workspaceTreeSummariesProvider = new WorkspaceTreeSummariesProvider(
     workspaceRootPath,

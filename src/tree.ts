@@ -1,4 +1,3 @@
-import OpenAI from "openai";
 import * as path from "path";
 import * as vscode from "vscode";
 import LLMService from "./llmService";
@@ -12,6 +11,7 @@ const ICONS_DIR_PATH: string = path.join(
 );
 const DIR_ICON_PATH = path.join(ICONS_DIR_PATH, "default_folder.svg");
 const FILE_ICON_PATH = path.join(ICONS_DIR_PATH, "default_file.svg");
+const IGNORED_FILE_EXTENSIONS = [".swp"];
 
 export class WorkspaceTreeSummariesProvider
   implements vscode.TreeDataProvider<WorkspaceTreeSummariesItem>
@@ -60,23 +60,33 @@ export class WorkspaceTreeSummariesProvider
     const dirUri = vscode.Uri.file(dirPath);
     return vscode.workspace.fs.readDirectory(dirUri).then((items) => {
       return Promise.all(
-        items.map(async (item) => {
-          const name = item[0];
-          const summary = await this.llmService?.summarizeFileOrDirectory(
-            dirUri,
-            name
-          );
-          return new WorkspaceTreeSummariesItem(
-            name,
-            item[1] === vscode.FileType.Directory
-              ? vscode.TreeItemCollapsibleState.Collapsed
-              : vscode.TreeItemCollapsibleState.None,
-            summary === undefined ? "AWAITING SUMMARY" : summary,
-            summary === undefined ? "AWAITING SUMMARY" : summary,
-            vscode.Uri.joinPath(dirUri, item[0]).fsPath,
-            item[1] === vscode.FileType.Directory
-          );
-        })
+        items
+          .filter(([itemName, itemType]) => {
+            const itemExtension = path.extname(itemName);
+
+            return (
+              itemType === vscode.FileType.Directory ||
+              !IGNORED_FILE_EXTENSIONS.includes(itemExtension)
+            );
+          })
+          .map(async (item) => {
+            const name = item[0];
+            const summary = await this.llmService?.summarizeFileOrDirectory(
+              dirUri,
+              name
+            );
+            const outputText = !summary ? "" : summary;
+            return new WorkspaceTreeSummariesItem(
+              name,
+              item[1] === vscode.FileType.Directory
+                ? vscode.TreeItemCollapsibleState.Collapsed
+                : vscode.TreeItemCollapsibleState.None,
+              outputText,
+              outputText,
+              vscode.Uri.joinPath(dirUri, item[0]).fsPath,
+              item[1] === vscode.FileType.Directory
+            );
+          })
       );
     });
   }

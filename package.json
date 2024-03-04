@@ -20,7 +20,12 @@
           "treesum.apiKey": {
             "type": "string",
             "default": "",
-            "description": "API key for accessing TreeSum services"
+            "description": "OpenAI API key"
+          },
+          "treesum.model": {
+            "type": "string",
+            "default": "gpt-3.5-turbo-0125",
+            "description": "OpenAI model key, as defined in https://platform.openai.com/docs/models/continuous-model-upgrades"
           }
         }
       }
@@ -62,7 +67,7 @@
     "typescript": "^5.3.3"
   },
   "dependencies": {
-    "@wandb/sdk": "^0.5.1",
-    "openai": "^4.24.3"
+    "openai": "^4.24.3",
+    "tiktoken": "^1.0.13"
   }
 }

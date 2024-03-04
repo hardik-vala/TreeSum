@@ -1,10 +1,18 @@
 import * as path from "path";
+import { encoding_for_model, TiktokenModel } from "tiktoken";
 import * as vscode from "vscode";
 import { Uri } from "vscode";
 import OpenAIClient from "./openaiClient";
 
 // Constant for the default number of retries
 const DEFAULT_RETRY_COUNT = 3;
+const DEFAULT_MAX_TOKEN_COUNT = 8000;
+const MAX_FILE_TOKEN_COUNT_DICT: { [key: string]: number } = {
+  "gpt-3.5-turbo-0125": 16000,
+  "gpt-4-32k-0613": 32000,
+};
+const DEFAULT_WAIT_MILLIS = 1000;
+const SYSTEM_MESSAGE = `You are a helpful assistant designed to summarize files and subdirectories. You are skilled at creating 1-sentence summaries of a file or subdirectory based on its name and its siblings inside of the parent directory.`;
 
 class LLMService {
   private openaiClient: OpenAIClient;
@@ -36,54 +44,62 @@ class LLMService {
     parent: Uri,
     fileOrDirName: string,
     retries: number = DEFAULT_RETRY_COUNT
-  ): Promise<string> {
+  ): Promise<string | null> {
+    const uri = vscode.Uri.joinPath(parent, fileOrDirName);
     const dirName = path.basename(parent.fsPath);
-    const topLevelFolderContents = vscode.workspace.fs.readDirectory(parent);
-    const topLevelContentsNames = (await topLevelFolderContents).map(
-      ([fileOrDirName, type]) => {
-        return fileOrDirName;
+    const topLevelContentsNames: string[] = await this.getDirectoryContentNames(parent);
+
+    let prompt = "";
+    if (await this.isFile(uri)) {
+      const fileContent = await this.readTextFile(uri);
+
+      if (!fileContent) {
+        prompt = this.constructPromptForFile(
+          dirName,
+          topLevelContentsNames,
+          fileOrDirName
+        );
+      } else {
+        prompt = this.constructPromptWithFileContent(
+          dirName,
+          topLevelContentsNames,
+          fileOrDirName,
+          fileContent
+        );
+        const tokenCount = this.countTokens(prompt);
+        if (tokenCount > this.getMaxTokenCount()) {
+          prompt = this.constructPromptForFile(
+            dirName,
+            topLevelContentsNames,
+            fileOrDirName
+          );
+        }
       }
-    );
-    const content = topLevelContentsNames.join(", ");
-
-    const systemMessage = `
-    You are a helpful assistant designed to summarize files.
-    You are skilled at creating 1-sentence summaries of a file based on
-    its file name and the other file names of its siblings inside of a directory.
-    `;
-
-    const prompt = `
-    I'm providing you with the file names contained inside of
-    a directory named ${dirName}.
-    The contents in this directory are as follows: \n
-
-    ${content}\n
-
-    I will select one of the files from this directory and provide you with
-    its name. Please provide a short, concise, one-sentence summary of this file
-    for the purposes of displaying the summary next to the file name
-    inside of a nav menu within a text editor like Visual Studio Code.\n
-    Don't waste any space re-stating the filename in your summary; you can assume
-    I already know it. Be as concise as possible, and use sentence fragments to
-    conserve space.
-
-    Please provide a one-sentence summary for the following file or directory:
-    ${fileOrDirName}
-    `;
+    } else {
+      const subdirContentNames = await this.getDirectoryContentNames(uri);
+      prompt = this.constructPromptForSubdir(
+        dirName,
+        topLevelContentsNames,
+        fileOrDirName,
+        subdirContentNames
+      );
+    }
 
     try {
       const response = await this.openaiClient.createChatCompletion(
-        systemMessage,
+        SYSTEM_MESSAGE,
         prompt
       );
+
+      await this.wait();
 
       if (response) {
         return response;
       } else {
-        return "No summary available";
+        return null;
       }
     } catch (error) {
-      if (isRateLimitError(error) && retries > 0) {
+      if (this.isRateLimitError(error) && retries > 0) {
         console.error("Rate limit reached, retrying...", error);
         await this.randomizedWait();
         return this.summarizeFileOrDirectory(
@@ -96,18 +112,151 @@ class LLMService {
         throw error;
       }
     }
+  }
 
-    function isRateLimitError(error: any): boolean {
-      return error.status === 429;
-    }
+  protected wait() {
+    return new Promise((resolve) => setTimeout(resolve, DEFAULT_WAIT_MILLIS));
   }
 
   protected randomizedWait() {
-    const min = 1000;
+    const min = DEFAULT_WAIT_MILLIS;
     const max = 4000;
 
     const delay = Math.random() * (max - min) + min;
     return new Promise((resolve) => setTimeout(resolve, delay));
+  }
+
+  private async isFile(uri: vscode.Uri): Promise<boolean> {
+    return vscode.workspace.fs.stat(uri).then((stats) => {
+      if (stats.type === vscode.FileType.File) {
+        return true;
+      }
+      if (stats.type === vscode.FileType.Directory) {
+        return false;
+      }
+
+      throw new Error("Unknown file type.");
+    });
+  }
+
+  private async readTextFile(uri: vscode.Uri): Promise<string | null> {
+    return vscode.workspace.fs.readFile(uri).then((content) => {
+      if (content.toString().trim().length > 0) {
+        return content.toString();
+      }
+
+      return null;
+    });
+  }
+
+  private async getDirectoryContentNames(uri: vscode.Uri): Promise<string[]> {
+    const contents = vscode.workspace.fs.readDirectory(uri);
+    const contentNames: string[] = (await contents).map(
+      ([fileOrDirName, type]) => {
+        return fileOrDirName;
+      }
+    );
+    return contentNames;
+  }
+
+  private constructPromptForFile(
+    dirName: string,
+    topLevelContentsNames: string[],
+    fileName: string
+  ): string {
+    const content = topLevelContentsNames.join(", ");
+
+    let prompt = `
+    I'm providing you with the file names contained inside of a directory named ${dirName}:
+
+    ${content}
+
+    For the purposes of displaying a summary next to the file in a file explorer inside Visual Studio Code, please provide a short, concise, one-sentence summary of this file:
+
+    ${fileName}
+
+    Don't waste any space re-stating the name of the file in your summary.
+    Be as concise as possible, and use sentence fragments to conserve space.
+    `;
+
+    return prompt;
+  }
+
+  private constructPromptForSubdir(
+    dirName: string,
+    topLevelContentsNames: string[],
+    subdirName: string,
+    subdirContentNames: string[],
+  ): string {
+    const content = topLevelContentsNames.join(", ");
+
+    let prompt = `
+    I'm providing you with the file names contained inside of a directory named ${dirName}:
+
+    ${content}
+
+    For the purposes of displaying a summary next to the subdirectory in a file explorer inside Visual Studio Code, please provide a short, concise, one-sentence summary of this subdirectory:
+
+    ${subdirName}
+
+    This is the contents of the subdirectory:
+
+    ${subdirContentNames.join(", ")}
+
+    Don't waste any space re-stating the name of the subdirectory in your summary.
+    Be as concise as possible, and use sentence fragments to conserve space.
+
+    Please provide a one-sentence summary for this subdirectory: ${subdirName}
+    `;
+
+    return prompt;
+  }
+
+  private constructPromptWithFileContent(
+    dirName: string,
+    topLevelContentsNames: string[],
+    fileName: string,
+    fileContent: string
+  ): string {
+    let prompt = `
+    I'm providing you with the file names contained inside of a directory named ${dirName}:
+
+    ${topLevelContentsNames.join(", ")}
+
+    For the purposes of displaying a summary next to the file in a file explorer inside Visual Studio Code, please provide a short, concise, one-sentence summary of this file:
+
+    ${fileName}
+
+    This is the contents of the file:
+
+    ${fileContent}
+
+    Don't waste any space re-stating the name of the file in your summary.
+    Be as concise as possible, and use sentence fragments to conserve space.
+
+    Please provide a one-sentence summary for this file: ${fileName}
+    `;
+
+    return prompt;
+  }
+
+  private countTokens(text: string): number {
+    const modelKey = this.openaiClient.getModelKey();
+    const encoder = encoding_for_model(modelKey as TiktokenModel);
+    const tokens = encoder.encode(text);
+    encoder.free();
+    return tokens.length;
+  }
+
+  protected getMaxTokenCount(): number {
+    const modelKey = this.openaiClient.getModelKey();
+    return modelKey in MAX_FILE_TOKEN_COUNT_DICT
+      ? MAX_FILE_TOKEN_COUNT_DICT[modelKey]
+      : DEFAULT_MAX_TOKEN_COUNT;
+  }
+
+  private isRateLimitError(error: any): boolean {
+    return error.status === 429;
   }
 }
 
