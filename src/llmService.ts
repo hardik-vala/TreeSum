@@ -47,12 +47,7 @@ class LLMService {
   ): Promise<string | null> {
     const uri = vscode.Uri.joinPath(parent, fileOrDirName);
     const dirName = path.basename(parent.fsPath);
-    const topLevelFolderContents = vscode.workspace.fs.readDirectory(parent);
-    const topLevelContentsNames: string[] = (await topLevelFolderContents).map(
-      ([fileOrDirName, type]) => {
-        return fileOrDirName;
-      }
-    );
+    const topLevelContentsNames: string[] = await this.getDirectoryContentNames(parent);
 
     let prompt = "";
     if (await this.isFile(uri)) {
@@ -81,10 +76,12 @@ class LLMService {
         }
       }
     } else {
+      const subdirContentNames = await this.getDirectoryContentNames(uri);
       prompt = this.constructPromptForSubdir(
         dirName,
         topLevelContentsNames,
-        fileOrDirName
+        fileOrDirName,
+        subdirContentNames
       );
     }
 
@@ -152,6 +149,16 @@ class LLMService {
     });
   }
 
+  private async getDirectoryContentNames(uri: vscode.Uri): Promise<string[]> {
+    const contents = vscode.workspace.fs.readDirectory(uri);
+    const contentNames: string[] = (await contents).map(
+      ([fileOrDirName, type]) => {
+        return fileOrDirName;
+      }
+    );
+    return contentNames;
+  }
+
   private constructPromptForFile(
     dirName: string,
     topLevelContentsNames: string[],
@@ -178,7 +185,8 @@ class LLMService {
   private constructPromptForSubdir(
     dirName: string,
     topLevelContentsNames: string[],
-    subdirName: string
+    subdirName: string,
+    subdirContentNames: string[],
   ): string {
     const content = topLevelContentsNames.join(", ");
 
@@ -191,8 +199,14 @@ class LLMService {
 
     ${subdirName}
 
+    This is the contents of the subdirectory:
+
+    ${subdirContentNames.join(", ")}
+
     Don't waste any space re-stating the name of the subdirectory in your summary.
     Be as concise as possible, and use sentence fragments to conserve space.
+
+    Please provide a one-sentence summary for this subdirectory: ${subdirName}
     `;
 
     return prompt;
@@ -204,12 +218,10 @@ class LLMService {
     fileName: string,
     fileContent: string
   ): string {
-    const content = topLevelContentsNames.join(", ");
-
     let prompt = `
     I'm providing you with the file names contained inside of a directory named ${dirName}:
 
-    ${content}
+    ${topLevelContentsNames.join(", ")}
 
     For the purposes of displaying a summary next to the file in a file explorer inside Visual Studio Code, please provide a short, concise, one-sentence summary of this file:
 
@@ -222,7 +234,7 @@ class LLMService {
     Don't waste any space re-stating the name of the file in your summary.
     Be as concise as possible, and use sentence fragments to conserve space.
 
-    Please provide a one-sentence summary for the file: ${fileName}
+    Please provide a one-sentence summary for this file: ${fileName}
     `;
 
     return prompt;

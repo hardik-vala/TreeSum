@@ -57,7 +57,7 @@ suite("LLMService Test Suite", () => {
     Don't waste any space re-stating the name of the file in your summary.
     Be as concise as possible, and use sentence fragments to conserve space.
 
-    Please provide a one-sentence summary for the file: test_file_1.txt
+    Please provide a one-sentence summary for this file: test_file_1.txt
     `;
     assert.strictEqual(
       openaiClientStub.createChatCompletion.calledOnceWith(
@@ -89,8 +89,14 @@ suite("LLMService Test Suite", () => {
 
     test_subdir
 
+    This is the contents of the subdirectory:
+
+    test_file_2.txt, test_file_3.txt
+
     Don't waste any space re-stating the name of the subdirectory in your summary.
     Be as concise as possible, and use sentence fragments to conserve space.
+
+    Please provide a one-sentence summary for this subdirectory: test_subdir
     `;
     assert.strictEqual(
       openaiClientStub.createChatCompletion.calledOnceWith(
