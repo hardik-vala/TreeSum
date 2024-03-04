@@ -1,12 +1,16 @@
 import * as path from "path";
-import { encoding_for_model } from "tiktoken";
+import { encoding_for_model, TiktokenModel } from "tiktoken";
 import * as vscode from "vscode";
 import { Uri } from "vscode";
 import OpenAIClient from "./openaiClient";
 
 // Constant for the default number of retries
 const DEFAULT_RETRY_COUNT = 3;
-const MAX_FILE_TOKENS = 16000;
+const DEFAULT_MAX_TOKEN_COUNT = 8000;
+const MAX_FILE_TOKEN_COUNT_DICT: { [key: string]: number } = {
+  "gpt-3.5-turbo-0125": 16000,
+  "gpt-4-32k-0613": 32000,
+};
 const SYSTEM_MESSAGE = `You are a helpful assistant designed to summarize files and subdirectories. You are skilled at creating 1-sentence summaries of a file or subdirectory based on its name and its siblings inside of the parent directory.`;
 
 class LLMService {
@@ -54,16 +58,33 @@ class LLMService {
       const fileContent = await this.readTextFile(uri);
 
       if (!fileContent) {
-        prompt = this.constructPromptForFile(dirName, topLevelContentsNames, fileOrDirName);
+        prompt = this.constructPromptForFile(
+          dirName,
+          topLevelContentsNames,
+          fileOrDirName
+        );
       } else {
-        prompt = this.constructPromptWithFileContent(dirName, topLevelContentsNames, fileOrDirName, fileContent);
+        prompt = this.constructPromptWithFileContent(
+          dirName,
+          topLevelContentsNames,
+          fileOrDirName,
+          fileContent
+        );
         const tokenCount = this.countTokens(prompt);
-        if (tokenCount > MAX_FILE_TOKENS) {
-          prompt = this.constructPromptForFile(dirName, topLevelContentsNames, fileOrDirName);
+        if (tokenCount > this.getMaxTokenCount()) {
+          prompt = this.constructPromptForFile(
+            dirName,
+            topLevelContentsNames,
+            fileOrDirName
+          );
         }
       }
     } else {
-      prompt = this.constructPromptForSubdir(dirName, topLevelContentsNames, fileOrDirName); 
+      prompt = this.constructPromptForSubdir(
+        dirName,
+        topLevelContentsNames,
+        fileOrDirName
+      );
     }
 
     try {
@@ -139,7 +160,7 @@ class LLMService {
     ${content}
 
     For the purposes of displaying a summary next to the file in a file explorer inside Visual Studio Code, please provide a short, concise, one-sentence summary of this file:
-    
+
     ${fileName}
 
     Don't waste any space re-stating the name of the file in your summary.
@@ -203,10 +224,18 @@ class LLMService {
   }
 
   private countTokens(text: string): number {
-    const encoder = encoding_for_model("gpt-3.5-turbo-0125");
+    const modelKey = this.openaiClient.getModelKey();
+    const encoder = encoding_for_model(modelKey as TiktokenModel);
     const tokens = encoder.encode(text);
     encoder.free();
     return tokens.length;
+  }
+
+  protected getMaxTokenCount(): number {
+    const modelKey = this.openaiClient.getModelKey();
+    return modelKey in MAX_FILE_TOKEN_COUNT_DICT
+      ? MAX_FILE_TOKEN_COUNT_DICT[modelKey]
+      : DEFAULT_MAX_TOKEN_COUNT;
   }
 
   private isRateLimitError(error: any): boolean {

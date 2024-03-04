@@ -17,6 +17,7 @@ suite("LLMService Test Suite", () => {
 
   setup(() => {
     openaiClientStub = sinon.createStubInstance(OpenAIClient);
+    openaiClientStub.getModelKey.returns("gpt-3.5-turbo-0125");
     llmService = new TestLLMService(openaiClientStub);
   });
 
@@ -140,6 +141,46 @@ suite("LLMService Test Suite", () => {
         true
       );
     }
+  });
+
+  test("summarizeFileOrDirectory when file exceeds max token count", async () => {
+    class LocalTestLLMService extends TestLLMService {
+      protected getMaxTokenCount() {
+        return 3;
+      }
+    }
+    llmService = new LocalTestLLMService(openaiClientStub);
+
+    openaiClientStub.createChatCompletion.resolves("FAKE SUMMARY");
+
+    const summary = await llmService.summarizeFileOrDirectory(
+      getWorkspaceRootUri(),
+      "test_file_1.txt"
+    );
+
+    assert.strictEqual(summary, "FAKE SUMMARY");
+
+    const expectedSystemMessage = `You are a helpful assistant designed to summarize files and subdirectories. You are skilled at creating 1-sentence summaries of a file or subdirectory based on its name and its siblings inside of the parent directory.`;
+
+    const expectedPrompt = `
+    I'm providing you with the file names contained inside of a directory named test_workspace:
+
+    test_file_1.txt, test_subdir
+
+    For the purposes of displaying a summary next to the file in a file explorer inside Visual Studio Code, please provide a short, concise, one-sentence summary of this file:
+
+    test_file_1.txt
+
+    Don't waste any space re-stating the name of the file in your summary.
+    Be as concise as possible, and use sentence fragments to conserve space.
+    `;
+    assert.strictEqual(
+      openaiClientStub.createChatCompletion.calledOnceWith(
+        expectedSystemMessage,
+        expectedPrompt
+      ),
+      true
+    );
   });
 });
 

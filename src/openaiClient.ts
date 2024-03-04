@@ -2,12 +2,14 @@ import OpenAI from "openai";
 
 class OpenAIClient {
   private openai: OpenAI;
+  private modelKey: string;
 
-  constructor(apiKey: string) {
+  constructor(apiKey: string, modelKey: string) {
     this.openai = new OpenAI({ apiKey });
+    this.modelKey = modelKey;
   }
 
-  async createChatCompletion(
+  public async createChatCompletion(
     systemPrompt: string,
     prompt: string
   ): Promise<string> {
@@ -17,7 +19,7 @@ class OpenAIClient {
           { role: "system", content: systemPrompt },
           { role: "user", content: prompt },
         ],
-        model: "gpt-3.5-turbo-0125"
+        model: this.modelKey
       });
 
       if (
@@ -33,6 +35,10 @@ class OpenAIClient {
       console.error("Error in OpenAIClient:", error);
       throw error;
     }
+  }
+
+  public getModelKey(): string {
+    return this.modelKey;
   }
 }
 
