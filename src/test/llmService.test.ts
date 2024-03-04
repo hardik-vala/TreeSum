@@ -96,6 +96,17 @@ suite("LLMService Test Suite", () => {
     );
   });
 
+  test("summarizeFileOrDirectory with empty OpenAI completion", async () => {
+    openaiClientStub.createChatCompletion.resolves(undefined);
+
+    const summary = await llmService.summarizeFileOrDirectory(
+      getWorkspaceRootUri(),
+      "test_file_1.txt"
+    );
+
+    assert.strictEqual(summary, null);
+  });
+
   test("summarizeFileOrDirectory with retry on rate limit error", async () => {
     const rateLimitError: any = new Error("Rate limit exceeded");
     rateLimitError["status"] = 429;

@@ -66,13 +66,14 @@ export class WorkspaceTreeSummariesProvider
             dirUri,
             name
           );
+          const outputText = !summary ? "" : summary;
           return new WorkspaceTreeSummariesItem(
             name,
             item[1] === vscode.FileType.Directory
               ? vscode.TreeItemCollapsibleState.Collapsed
               : vscode.TreeItemCollapsibleState.None,
-            summary === undefined ? "AWAITING SUMMARY" : summary,
-            summary === undefined ? "AWAITING SUMMARY" : summary,
+            outputText,
+            outputText,
             vscode.Uri.joinPath(dirUri, item[0]).fsPath,
             item[1] === vscode.FileType.Directory
           );

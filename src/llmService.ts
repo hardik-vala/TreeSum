@@ -39,7 +39,7 @@ class LLMService {
     parent: Uri,
     fileOrDirName: string,
     retries: number = DEFAULT_RETRY_COUNT
-  ): Promise<string> {
+  ): Promise<string | null> {
     const uri = vscode.Uri.joinPath(parent, fileOrDirName);
     const dirName = path.basename(parent.fsPath);
     const topLevelFolderContents = vscode.workspace.fs.readDirectory(parent);
@@ -77,7 +77,7 @@ class LLMService {
       if (response) {
         return response;
       } else {
-        return "(No summary available)";
+        return null;
       }
     } catch (error) {
       if (this.isRateLimitError(error) && retries > 0) {

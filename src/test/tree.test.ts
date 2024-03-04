@@ -101,6 +101,31 @@ suite("WorkspaceTreeSummariesProvider Test Suite", () => {
       ),
     ]);
   });
+
+  test("getChildren with null response from LLMService", async () => {
+    llmServiceStub.summarizeFileOrDirectory.resolves(null);
+
+    const children = await provider.getChildren();
+
+    assert.deepStrictEqual(children, [
+      new WorkspaceTreeSummariesItem(
+        "test_file_1.txt",
+        vscode.TreeItemCollapsibleState.None,
+        "",
+        "",
+        vscode.Uri.joinPath(workspaceRootUri, "test_file_1.txt").fsPath,
+        false
+      ),
+      new WorkspaceTreeSummariesItem(
+        "test_subdir",
+        vscode.TreeItemCollapsibleState.Collapsed,
+        "",
+        "",
+        vscode.Uri.joinPath(workspaceRootUri, "test_subdir").fsPath,
+        true
+      ),
+    ]);
+  });
 });
 
 function getWorkspaceRootUri(): vscode.Uri {
