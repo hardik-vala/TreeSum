@@ -44,7 +44,7 @@ suite("LLMService Test Suite", () => {
     const expectedPrompt = `
     I'm providing you with the file names contained inside of a directory named test_workspace:
 
-    test_file_1.txt, test_subdir
+    ignored_file.swp, test_file_1.txt, test_subdir
 
     For the purposes of displaying a summary next to the file in a file explorer inside Visual Studio Code, please provide a short, concise, one-sentence summary of this file:
 
@@ -83,7 +83,7 @@ suite("LLMService Test Suite", () => {
     const expectedPrompt = `
     I'm providing you with the file names contained inside of a directory named test_workspace:
 
-    test_file_1.txt, test_subdir
+    ignored_file.swp, test_file_1.txt, test_subdir
 
     For the purposes of displaying a summary next to the subdirectory in a file explorer inside Visual Studio Code, please provide a short, concise, one-sentence summary of this subdirectory:
 
@@ -175,7 +175,7 @@ suite("LLMService Test Suite", () => {
     const expectedPrompt = `
     I'm providing you with the file names contained inside of a directory named test_workspace:
 
-    test_file_1.txt, test_subdir
+    ignored_file.swp, test_file_1.txt, test_subdir
 
     For the purposes of displaying a summary next to the file in a file explorer inside Visual Studio Code, please provide a short, concise, one-sentence summary of this file:
 
