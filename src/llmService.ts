@@ -1,18 +1,17 @@
-<<<<<<< HEAD
-import OpenAI from "openai";
 import * as path from "path";
-import * as vscode from "vscode";
-import { Uri } from "vscode";
-=======
-import * as path from "path";
+import { encoding_for_model } from "tiktoken";
 import * as vscode from "vscode";
 import { Uri } from "vscode";
 import OpenAIClient from "./openaiClient";
->>>>>>> main
 
 // Constant for the default number of retries
 const DEFAULT_RETRY_COUNT = 3;
-const MAX_FILE_TOKENS = 1000;
+const MAX_FILE_TOKENS = 16000;
+const SYSTEM_MESSAGE = `
+You are a helpful assistant designed to summarize files.
+You are skilled at creating 1-sentence summaries of a file based on
+its file name and the other file names of its siblings inside of a directory.
+`;
 
 class LLMService {
   private openaiClient: OpenAIClient;
@@ -48,88 +47,44 @@ class LLMService {
     const uri = vscode.Uri.joinPath(parent, fileOrDirName);
     const dirName = path.basename(parent.fsPath);
     const topLevelFolderContents = vscode.workspace.fs.readDirectory(parent);
-    const topLevelContentsNames = (await topLevelFolderContents).map(
+    const topLevelContentsNames: string[] = (await topLevelFolderContents).map(
       ([fileOrDirName, type]) => {
         return fileOrDirName;
       }
     );
-    const content = topLevelContentsNames.join(", ");
 
-    const systemMessage = `
-    You are a helpful assistant designed to summarize files.
-    You are skilled at creating 1-sentence summaries of a file based on
-    its file name and the other file names of its siblings inside of a directory.
-    `;
-
-    let prompt = `
-    I'm providing you with the file names contained inside of
-    a directory named ${dirName}.
-    The contents in this directory are as follows:
-
-    ${content}`;
+    let prompt = "";
     if (await this.isFile(uri)) {
-      const text = await this.readTextFile(uri);
-      const tokenCount = this.countTokens(text);
-      if (text && tokenCount < MAX_FILE_TOKENS) {
-        prompt += `
-    I will select one of the files from this directory and provide you with
-    its name and content. Please provide a short, concise, one-sentence summary of this file
-    for the purposes of displaying the summary next to the file name
-    inside of a nav menu within a text editor like Visual Studio Code.\n
-    Don't waste any space re-stating the filename in your summary; you can assume
-    I already know it. Be as concise as possible, and use sentence fragments to
-    conserve space.
+      const fileContent = await this.readTextFile(uri);
 
-    File name:
-    ${fileOrDirName}
-
-    File content:
-    ${text}
-
-    Please provide a one-sentence summary for the file.
-    `;
+      if (!fileContent) {
+        prompt = this.constructPromptForFile(dirName, topLevelContentsNames, fileOrDirName);
       } else {
-        prompt += `
-      I will select one of the files from this directory and provide you with
-      its name. Please provide a short, concise, one-sentence summary of this file
-      for the purposes of displaying the summary next to the file name
-      inside of a nav menu within a text editor like Visual Studio Code.\n
-      Don't waste any space re-stating the name of the file in your summary; you can assume
-      I already know it. Be as concise as possible, and use sentence fragments to
-      conserve space.
-  
-      Please provide a one-sentence summary for the following file:
-      ${fileOrDirName}
-      `;
+        prompt = this.constructPromptWithFileContent(dirName, topLevelContentsNames, fileOrDirName, fileContent);
+        const tokenCount = this.countTokens(prompt);
+        if (tokenCount > MAX_FILE_TOKENS) {
+          prompt = this.constructPromptForFile(dirName, topLevelContentsNames, fileOrDirName);
+        }
       }
     } else {
-      prompt += `
-    I will select one of the subdirectories from this directory and provide you with
-    its name. Please provide a short, concise, one-sentence summary of this subdirectory
-    for the purposes of displaying the summary next to the subdirectory name
-    inside of a nav menu within a text editor like Visual Studio Code.\n
-    Don't waste any space re-stating the name of the subdirectory in your summary; you can assume
-    I already know it. Be as concise as possible, and use sentence fragments to
-    conserve space.
-
-    Please provide a one-sentence summary for the following subdirectory:
-    ${fileOrDirName}
-    `;
+      prompt = this.constructPromptForSubdir(dirName, topLevelContentsNames, fileOrDirName); 
     }
 
     try {
       const response = await this.openaiClient.createChatCompletion(
-        systemMessage,
+        SYSTEM_MESSAGE,
         prompt
       );
+
+      await this.randomizedWait();
 
       if (response) {
         return response;
       } else {
-        return "No summary available";
+        return "(No summary available)";
       }
     } catch (error) {
-      if (isRateLimitError(error) && retries > 0) {
+      if (this.isRateLimitError(error) && retries > 0) {
         console.error("Rate limit reached, retrying...", error);
         await this.randomizedWait();
         return this.summarizeFileOrDirectory(
@@ -141,10 +96,6 @@ class LLMService {
         console.error("Error in LLMService:", error);
         throw error;
       }
-    }
-
-    function isRateLimitError(error: any): boolean {
-      return error.status === 429;
     }
   }
 
@@ -170,22 +121,100 @@ class LLMService {
   }
 
   private async readTextFile(uri: vscode.Uri): Promise<string | null> {
-    return vscode.workspace.fs.readFile(uri).then(content => {
+    return vscode.workspace.fs.readFile(uri).then((content) => {
       if (content.toString().trim().length > 0) {
         return content.toString();
       }
-      
+
       return null;
     });
   }
 
-  private countTokens(text: string | null): number {
-    if (!text) {
-      return 0;
-    }
-    let tokens = text.split(/\s+|\\n+/gm); 
-    tokens = tokens.filter(t => t.length > 0);
+  private constructPromptForFile(
+    dirName: string,
+    topLevelContentsNames: string[],
+    fileName: string
+  ): string {
+    const content = topLevelContentsNames.join(", ");
+
+    let prompt = `
+    I'm providing you with the file names contained inside of a directory named ${dirName}:
+
+    ${content}
+
+    For the purposes of displaying a summary next to the file in a file explorer inside Visual Studio Code, please provide a short, concise, one-sentence summary of this file:
+    
+    ${fileName}
+
+    Don't waste any space re-stating the name of the file in your summary.
+    Be as concise as possible, and use sentence fragments to conserve space.
+    `;
+
+    return prompt;
+  }
+
+  private constructPromptForSubdir(
+    dirName: string,
+    topLevelContentsNames: string[],
+    subdirName: string
+  ): string {
+    const content = topLevelContentsNames.join(", ");
+
+    let prompt = `
+    I'm providing you with the file names contained inside of a directory named ${dirName}:
+
+    ${content}
+
+    For the purposes of displaying a summary next to the subdirectory in a file explorer inside Visual Studio Code, please provide a short, concise, one-sentence summary of this subdirectory:
+
+    ${subdirName}
+
+    Don't waste any space re-stating the name of the subdirectory in your summary.
+    Be as concise as possible, and use sentence fragments to conserve space.
+    `;
+
+    return prompt;
+  }
+
+  private constructPromptWithFileContent(
+    dirName: string,
+    topLevelContentsNames: string[],
+    fileName: string,
+    fileContent: string
+  ): string {
+    const content = topLevelContentsNames.join(", ");
+
+    let prompt = `
+    I'm providing you with the file names contained inside of a directory named ${dirName}:
+
+    ${content}
+
+    For the purposes of displaying a summary next to the file in a file explorer inside Visual Studio Code, please provide a short, concise, one-sentence summary of this file:
+    
+    ${fileName}
+
+    This is the contents of the file:
+
+    ${fileContent}
+
+    Don't waste any space re-stating the name of the file in your summary.
+    Be as concise as possible, and use sentence fragments to conserve space.
+
+    Please provide a one-sentence summary for the file: ${fileName}.
+    `;
+
+    return prompt;
+  }
+
+  private countTokens(text: string): number {
+    const encoder = encoding_for_model("gpt-3.5-turbo-0125");
+    const tokens = encoder.encode(text);
+    encoder.free();
     return tokens.length;
+  }
+
+  private isRateLimitError(error: any): boolean {
+    return error.status === 429;
   }
 }
 

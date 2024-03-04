@@ -17,7 +17,7 @@ class OpenAIClient {
           { role: "system", content: systemPrompt },
           { role: "user", content: prompt },
         ],
-        model: "gpt-4",
+        model: "gpt-3.5-turbo-0125"
       });
 
       if (
