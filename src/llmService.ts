@@ -7,11 +7,7 @@ import OpenAIClient from "./openaiClient";
 // Constant for the default number of retries
 const DEFAULT_RETRY_COUNT = 3;
 const MAX_FILE_TOKENS = 16000;
-const SYSTEM_MESSAGE = `
-You are a helpful assistant designed to summarize files.
-You are skilled at creating 1-sentence summaries of a file based on
-its file name and the other file names of its siblings inside of a directory.
-`;
+const SYSTEM_MESSAGE = `You are a helpful assistant designed to summarize files and subdirectories. You are skilled at creating 1-sentence summaries of a file or subdirectory based on its name and its siblings inside of the parent directory.`;
 
 class LLMService {
   private openaiClient: OpenAIClient;

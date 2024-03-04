@@ -34,11 +34,7 @@ suite("LLMService Test Suite", () => {
 
     assert.strictEqual(summary, "FAKE SUMMARY");
 
-    const expectedSystemMessage = `
-You are a helpful assistant designed to summarize files.
-You are skilled at creating 1-sentence summaries of a file based on
-its file name and the other file names of its siblings inside of a directory.
-`;
+    const expectedSystemMessage = `You are a helpful assistant designed to summarize files and subdirectories. You are skilled at creating 1-sentence summaries of a file or subdirectory based on its name and its siblings inside of the parent directory.`;
 
     const expectedPrompt = `
     I'm providing you with the file names contained inside of a directory named test_workspace:
@@ -77,11 +73,7 @@ its file name and the other file names of its siblings inside of a directory.
 
     assert.strictEqual(summary, "FAKE SUMMARY");
 
-    const expectedSystemMessage = `
-You are a helpful assistant designed to summarize files.
-You are skilled at creating 1-sentence summaries of a file based on
-its file name and the other file names of its siblings inside of a directory.
-`;
+    const expectedSystemMessage = `You are a helpful assistant designed to summarize files and subdirectories. You are skilled at creating 1-sentence summaries of a file or subdirectory based on its name and its siblings inside of the parent directory.`;
 
     const expectedPrompt = `
     I'm providing you with the file names contained inside of a directory named test_workspace:
