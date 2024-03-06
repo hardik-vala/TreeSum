@@ -11,7 +11,7 @@ If you need help, have questions, or have any feature requests, please file a
 Expand the 'File and Folder Summaries' panel in the file explorer to generate 
 summaries using OpenAI API's.
 
-![screenshot](https://github.com/hardik-vala/TreeSum/blob/main/media/screenshot.png)
+![screenshot](https://i.postimg.cc/qRnwK59C/screenshot.png)
 
 The summaries are not refreshed when the underlying file and directories change.
 You can manually trigger a refresh with the command, `treesum.refresh`.
