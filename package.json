@@ -3,12 +3,25 @@
   "displayName": "TreeSum",
   "description": "Smart way to summarize files and folders in a vscode workspace.",
   "version": "0.0.1",
+  "publisher": "thehardik",
+  "author": {
+    "name": "The Hardik"
+  },
   "engines": {
     "vscode": "^1.85.0"
   },
   "categories": [
     "Other"
   ],
+  "keywords": [
+    "explorer",
+    "files",
+    "folders",
+    "summarize",
+    "tree"
+  ],
+  "icon": "media/icon_1020.png",
+  "pricing": "Free",
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
@@ -67,7 +80,9 @@
     "typescript": "^5.3.3"
   },
   "dependencies": {
+    "@vscode/vsce": "^2.24.0",
     "openai": "^4.24.3",
     "tiktoken": "^1.0.13"
-  }
+  },
+  "license": "SEE LICENSE IN LICENSE"
 }
