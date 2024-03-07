@@ -2,7 +2,7 @@
   "name": "treesum",
   "displayName": "TreeSum",
   "description": "Smart way to summarize files and folders in a vscode workspace.",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "publisher": "thehardik",
   "author": {
     "name": "The Hardik"
